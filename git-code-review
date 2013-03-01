@@ -77,6 +77,19 @@ for BRANCH in $REMOTE_BRANCHES; do
   fi
 done
 
+# check old branches
+EXISTING_BRANCHES=$(find "$REVIEW_DIR/" -type f -and -not -name '.*' | sed -E -e 's/.*\.git\/review\/+//')
+
+for BRANCH in $EXISTING_BRANCHES; do
+  if [[ "$REMOTE_BRANCHES" != *$BRANCH* ]]; then
+    HASH_FILE="$REVIEW_DIR/$BRANCH"
+    OLD_HASH=$(cat "$HASH_FILE")
+
+    echo "Branch $BRANCH removed (was: $OLD_HASH)"
+    rm "$HASH_FILE"
+  fi
+done
+
 if [ -z "$FOUND" ]; then
   echo "Nothing to review, back to work!"
 fi
