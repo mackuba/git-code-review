@@ -35,7 +35,7 @@ for BRANCH in $REMOTE_BRANCHES; do
       # print GitHub URL if possible
       REMOTE=$(echo $BRANCH | cut -d '/' -f 1)
       ORIGIN_URL=$(git remote show -n $REMOTE | grep "Fetch URL:")
-      GITHUB_URL=$(echo "$ORIGIN_URL" | grep -E -o 'github.com:.*' | sed -e 's/:/\//' -e 's/\.git$//')
+      GITHUB_URL=$(echo "$ORIGIN_URL" | grep -E -o 'github.com[:/].*' | sed -e 's/:/\//' -e 's/\.git$//')
 
       if [ "$GITHUB_URL" ]; then
         echo " -> https://$GITHUB_URL/compare/$OLD_HASH...$NEW_HASH"
