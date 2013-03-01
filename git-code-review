@@ -1,4 +1,7 @@
 #!/bin/bash
+# Copyright (c) 2013 Jakub Suder, licensed under MIT license
+# version: 2013-03-01
+# http://github.com/jsuder/git-code-review
 
 REPO=$(git rev-parse --show-toplevel)
 REVIEW_DIR="$REPO/.git/review"
