@@ -52,6 +52,10 @@ If the repo's URL doesn't look like a GitHub URL, then `git-code-review` just wo
 
 Note: the ranges listed in `git fetch` output (here: `abc0825..0a711db`) and the ones printed by `git-code-review` (`313a63b..0a711db`) don't have to be the same - that's the whole point. The former will be the difference since the last time you did `git fetch` or `git pull`, which might have been an hour ago, and the latter will be the difference since the last time you called `git-code-review`, which is everything you haven't reviewed yet.
 
+## Options
+
+`-n` - dry run, runs everything as above but doesn't update the files at the end
+
 
 ## Credits
 

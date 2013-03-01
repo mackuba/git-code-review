@@ -3,6 +3,26 @@
 # version: 2013-03-01
 # http://github.com/jsuder/git-code-review
 
+usage() {
+  echo "usage: git code-review [options]"
+  echo ""
+  echo "  -n   dry run - prints changes but doesn't update any files"
+  echo "  -h   prints this help"
+  echo ""
+}
+
+while getopts "nh" OPTION; do
+  case $OPTION in
+    h)
+      usage
+      exit 1
+      ;;
+    n)
+      DRY_RUN=1
+      ;;
+  esac
+done
+
 REPO=$(git rev-parse --show-toplevel)
 REVIEW_DIR="$REPO/.git/review"
 
@@ -51,8 +71,10 @@ for BRANCH in $REMOTE_BRANCHES; do
     echo "Branch $BRANCH created: $NEW_HASH"
   fi
 
-  # update saved revision
-  echo $NEW_HASH > "$HASH_FILE"
+  if [ -z "$DRY_RUN" ]; then
+    # update saved revision
+    echo $NEW_HASH > "$HASH_FILE"
+  fi
 done
 
 if [ -z "$FOUND" ]; then
