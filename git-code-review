@@ -6,6 +6,10 @@
 REPO=$(git rev-parse --show-toplevel)
 REVIEW_DIR="$REPO/.git/review"
 
+if [ -z "$REPO" ]; then
+  exit 1
+fi
+
 echo "Fetching latest updates..."
 git fetch
 
