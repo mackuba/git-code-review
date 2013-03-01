@@ -1,0 +1,53 @@
+#!/bin/bash
+
+REPO=$(git rev-parse --show-toplevel)
+REVIEW_DIR="$REPO/.git/review"
+
+echo "Fetching latest updates..."
+git fetch
+
+# make sure .git/review even exists
+if [ ! -e "$REVIEW_DIR" ]; then
+  mkdir "$REVIEW_DIR"
+fi
+
+# get all currently existing remote branches
+REMOTE_BRANCHES=$(git branch -r)
+
+for BRANCH in $REMOTE_BRANCHES; do
+  NEW_HASH=$(git rev-parse --short $BRANCH)
+  HASH_FILE="$REVIEW_DIR/$BRANCH"
+
+  if [ -e "$HASH_FILE" ]; then
+    # branch existed before, print revisions
+    OLD_HASH=$(cat "$HASH_FILE")
+
+    if [ $OLD_HASH != $NEW_HASH ]; then
+      echo "Branch $BRANCH updated: $OLD_HASH..$NEW_HASH"
+
+      # print GitHub URL if possible
+      REMOTE=$(echo $BRANCH | cut -d '/' -f 1)
+      ORIGIN_URL=$(git remote show -n $REMOTE | grep "Fetch URL:")
+      GITHUB_URL=$(echo "$ORIGIN_URL" | grep -E -o 'github.com:.*' | sed -e 's/:/\//' -e 's/\.git$//')
+
+      if [ "$GITHUB_URL" ]; then
+        echo " -> https://$GITHUB_URL/compare/$OLD_HASH...$NEW_HASH"
+      fi
+
+      FOUND=1
+    fi
+  else
+    # new branch created - prepare parent directories
+    DIR=$(dirname "$HASH_FILE")
+    mkdir -p "$DIR"
+
+    echo "Branch $BRANCH created: $NEW_HASH"
+  fi
+
+  # update saved revision
+  echo $NEW_HASH > "$HASH_FILE"
+done
+
+if [ -z "$FOUND" ]; then
+  echo "Nothing to review, back to work!"
+fi
