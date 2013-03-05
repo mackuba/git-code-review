@@ -48,16 +48,32 @@ for BRANCH in $REMOTE_BRANCHES; do
   ORIGIN_URL=$(git remote show -n $REMOTE | grep "Fetch URL:")
   GITHUB_URL=$(echo "$ORIGIN_URL" | grep -E -o 'github.com[:/].*' | sed -e 's/:/\//' -e 's/\.git$//')
 
+  # find the main branch for compare links
+  if [ $(git rev-parse -q --verify $REMOTE/develop) ]; then
+    MAIN_BRANCH=develop
+  elif [ $(git rev-parse -q --verify $REMOTE/master) ]; then
+    MAIN_BRANCH=master
+  fi
+
   if [ -e "$HASH_FILE" ]; then
     # branch existed before, print revisions
     OLD_HASH=$(cat "$HASH_FILE")
 
     if [ $OLD_HASH != $NEW_HASH ]; then
       echo
-      echo "Branch $BRANCH updated: $OLD_HASH..$NEW_HASH"
 
-      if [ "$GITHUB_URL" ]; then
-        echo " -> https://$GITHUB_URL/compare/$OLD_HASH...$NEW_HASH"
+      if [ $(git branch -r --contains $OLD_HASH | grep $BRANCH) ]; then
+        echo "Branch $BRANCH updated: $OLD_HASH..$NEW_HASH"
+
+        if [ "$GITHUB_URL" ]; then
+          echo " -> https://$GITHUB_URL/compare/$OLD_HASH...$NEW_HASH"
+        fi
+      else
+        echo "Branch $BRANCH was rebased, I'm confused... ($OLD_HASH -> $NEW_HASH)"
+
+        if [ "$MAIN_BRANCH" -a "$GITHUB_URL" ]; then
+          echo " -> https://$GITHUB_URL/compare/$MAIN_BRANCH...$NEW_HASH"
+        fi
       fi
 
       FOUND=1
@@ -67,13 +83,6 @@ for BRANCH in $REMOTE_BRANCHES; do
     DIR=$(dirname "$HASH_FILE")
     mkdir -p "$DIR"
     echo
-
-    # find the main branch for compare links
-    if [ $(git rev-parse -q --verify $REMOTE/develop) ]; then
-      MAIN_BRANCH=develop
-    elif [ $(git rev-parse -q --verify $REMOTE/master) ]; then
-      MAIN_BRANCH=master
-    fi
 
     if [ "$MAIN_BRANCH" ]; then
       echo "Branch $BRANCH created: $REMOTE/$MAIN_BRANCH..$NEW_HASH"
