@@ -82,19 +82,24 @@ for BRANCH in $REMOTE_BRANCHES; do
     # new branch created - prepare parent directories
     DIR=$(dirname "$HASH_FILE")
     mkdir -p "$DIR"
-    echo
 
     if [ "$MAIN_BRANCH" ]; then
-      echo "Branch $BRANCH created: $REMOTE/$MAIN_BRANCH..$NEW_HASH"
+      if [ ! $(git branch -r --contains $NEW_HASH | grep $REMOTE/$MAIN_BRANCH) ]; then
+        echo
+        echo "Branch $BRANCH created: $REMOTE/$MAIN_BRANCH..$NEW_HASH"
 
-      if [ "$GITHUB_URL" ]; then
-        echo " -> https://$GITHUB_URL/compare/$MAIN_BRANCH...$NEW_HASH"
+        if [ "$GITHUB_URL" ]; then
+          echo " -> https://$GITHUB_URL/compare/$MAIN_BRANCH...$NEW_HASH"
+        fi
+
+        FOUND=1
       fi
     else
+      echo
       echo "Branch $BRANCH created: $NEW_HASH"
-    fi
 
-    FOUND=1
+      FOUND=1
+    fi
   fi
 
   if [ -z "$DRY_RUN" ]; then
