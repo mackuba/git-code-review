@@ -86,7 +86,10 @@ for BRANCH in $EXISTING_BRANCHES; do
     OLD_HASH=$(cat "$HASH_FILE")
 
     echo "Branch $BRANCH removed (was: $OLD_HASH)"
-    rm "$HASH_FILE"
+
+    if [ -z "$DRY_RUN" ]; then
+      rm "$HASH_FILE"
+    fi
   fi
 done
 
