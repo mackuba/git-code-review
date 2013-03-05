@@ -44,18 +44,17 @@ REMOTE_BRANCHES=$(git branch -r | grep -v "/HEAD")
 for BRANCH in $REMOTE_BRANCHES; do
   NEW_HASH=$(git rev-parse --short $BRANCH)
   HASH_FILE="$REVIEW_DIR/$BRANCH"
+  REMOTE=$(echo $BRANCH | cut -d '/' -f 1)
+  ORIGIN_URL=$(git remote show -n $REMOTE | grep "Fetch URL:")
+  GITHUB_URL=$(echo "$ORIGIN_URL" | grep -E -o 'github.com[:/].*' | sed -e 's/:/\//' -e 's/\.git$//')
 
   if [ -e "$HASH_FILE" ]; then
     # branch existed before, print revisions
     OLD_HASH=$(cat "$HASH_FILE")
 
     if [ $OLD_HASH != $NEW_HASH ]; then
+      echo
       echo "Branch $BRANCH updated: $OLD_HASH..$NEW_HASH"
-
-      # print GitHub URL if possible
-      REMOTE=$(echo $BRANCH | cut -d '/' -f 1)
-      ORIGIN_URL=$(git remote show -n $REMOTE | grep "Fetch URL:")
-      GITHUB_URL=$(echo "$ORIGIN_URL" | grep -E -o 'github.com[:/].*' | sed -e 's/:/\//' -e 's/\.git$//')
 
       if [ "$GITHUB_URL" ]; then
         echo " -> https://$GITHUB_URL/compare/$OLD_HASH...$NEW_HASH"
@@ -67,8 +66,26 @@ for BRANCH in $REMOTE_BRANCHES; do
     # new branch created - prepare parent directories
     DIR=$(dirname "$HASH_FILE")
     mkdir -p "$DIR"
+    echo
 
-    echo "Branch $BRANCH created: $NEW_HASH"
+    # find the main branch for compare links
+    if [ $(git rev-parse -q --verify $REMOTE/develop) ]; then
+      MAIN_BRANCH=develop
+    elif [ $(git rev-parse -q --verify $REMOTE/master) ]; then
+      MAIN_BRANCH=master
+    fi
+
+    if [ "$MAIN_BRANCH" ]; then
+      echo "Branch $BRANCH created: $REMOTE/$MAIN_BRANCH..$NEW_HASH"
+
+      if [ "$GITHUB_URL" ]; then
+        echo " -> https://$GITHUB_URL/compare/$MAIN_BRANCH...$NEW_HASH"
+      fi
+    else
+      echo "Branch $BRANCH created: $NEW_HASH"
+    fi
+
+    FOUND=1
   fi
 
   if [ -z "$DRY_RUN" ]; then
