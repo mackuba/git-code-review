@@ -1,6 +1,6 @@
 #!/bin/bash
 # Copyright (c) 2013 Jakub Suder, licensed under MIT license
-# version: 2013-03-01
+# version: 2013-03-05
 # http://github.com/jsuder/git-code-review
 
 usage() {
@@ -39,7 +39,7 @@ if [ ! -e "$REVIEW_DIR" ]; then
 fi
 
 # get all currently existing remote branches
-REMOTE_BRANCHES=$(git branch -r)
+REMOTE_BRANCHES=$(git branch -r | grep -v "/HEAD")
 
 for BRANCH in $REMOTE_BRANCHES; do
   NEW_HASH=$(git rev-parse --short $BRANCH)
