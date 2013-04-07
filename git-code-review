@@ -62,7 +62,7 @@ for BRANCH in $REMOTE_BRANCHES; do
     if [ $OLD_HASH != $NEW_HASH ]; then
       echo
 
-      if [ $(git branch -r --contains $OLD_HASH | grep -v " ->" | grep $BRANCH) ]; then
+      if [ "$(git branch -r --contains $OLD_HASH | grep -v " ->" | grep $BRANCH)" ]; then
         echo "Branch $BRANCH updated: $OLD_HASH..$NEW_HASH"
 
         if [ "$GITHUB_URL" ]; then
@@ -84,7 +84,7 @@ for BRANCH in $REMOTE_BRANCHES; do
     mkdir -p "$DIR"
 
     if [ "$MAIN_BRANCH" ]; then
-      if [ ! $(git branch -r --contains $NEW_HASH | grep -v " ->" | grep $REMOTE/$MAIN_BRANCH) ]; then
+      if [ ! "$(git branch -r --contains $NEW_HASH | grep -v " ->" | grep $REMOTE/$MAIN_BRANCH)" ]; then
         echo
         echo "Branch $BRANCH created: $REMOTE/$MAIN_BRANCH..$NEW_HASH"
 
