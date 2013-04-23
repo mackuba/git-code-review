@@ -5,14 +5,22 @@
 
 usage() {
   echo "usage: git code-review [options]"
-  echo ""
+  echo
+  echo "  -i   interactive mode - review changesets (see config options below)"
   echo "  -n   dry run - prints changes but doesn't update any files"
   echo "  -h   prints this help"
-  echo ""
+  echo
+  echo "config options: "
+  echo "   code-review.command   default is \"git log -p\" (applies only when -i is provided)"
+  echo "   code-review.auto      if true, will not prompt before entering interactive review (applies only when -i is provided)"
+  echo
 }
 
-while getopts "nh" OPTION; do
+while getopts "inh" OPTION; do
   case $OPTION in
+    i)
+      INTERACTIVE=1
+      ;;
     h)
       usage
       exit 1
@@ -24,19 +32,27 @@ while getopts "nh" OPTION; do
 done
 
 REPO=$(git rev-parse --show-toplevel)
-REVIEW_DIR="$REPO/.git/review"
-
 if [ -z "$REPO" ]; then
   exit 1
 fi
 
-echo "Fetching latest updates..."
-git fetch
-
-# make sure .git/review even exists
+REVIEW_DIR="$REPO/.git/review"
 if [ ! -e "$REVIEW_DIR" ]; then
   mkdir "$REVIEW_DIR"
 fi
+
+REVIEW_COMMAND=$(git config code-review.command)
+if [ -z "$REVIEW_COMMAND" ]; then
+  REVIEW_COMMAND="git log -p"
+fi
+
+REVIEW_AUTO=$(git config code-review.auto)
+if [ "$REVIEW_AUTO" != "true" ]; then
+  REVIEW_AUTO="false"
+fi
+
+echo "Fetching latest updates..."
+git fetch
 
 # get all currently existing remote branches
 REMOTE_BRANCHES=$(git branch -r | grep -v " ->")
@@ -47,13 +63,13 @@ for BRANCH in $REMOTE_BRANCHES; do
   REMOTE=$(echo $BRANCH | cut -d '/' -f 1)
   REMOTE_URL=$(git remote show -n $REMOTE | grep "Fetch URL:")
   GITHUB_URL=$(echo "$REMOTE_URL" | grep -E -o 'github.com[:/].*' | sed -e 's/:/\//' -e 's/\.git$//')
-
   # find the main branch for compare links
   if [ $(git rev-parse -q --verify $REMOTE/develop) ]; then
     MAIN_BRANCH=develop
   elif [ $(git rev-parse -q --verify $REMOTE/master) ]; then
     MAIN_BRANCH=master
   fi
+  SKIP=0
 
   if [ -e "$HASH_FILE" ]; then
     # branch existed before, print revisions
@@ -68,15 +84,35 @@ for BRANCH in $REMOTE_BRANCHES; do
         if [ "$GITHUB_URL" ]; then
           echo " -> https://$GITHUB_URL/compare/$OLD_HASH...$NEW_HASH"
         fi
-      else
-        echo "Branch $BRANCH was rebased, I'm confused... ($OLD_HASH -> $NEW_HASH)"
 
+        if [ $INTERACTIVE ]; then
+          if [ "$REVIEW_AUTO" == "true" ]; then
+            $REVIEW_COMMAND $OLD_HASH..$NEW_HASH
+          else
+            read -p "Review? Y(es)/n(o)/l(ater): " ynl
+            case $ynl in
+              [Yy]* )
+                $REVIEW_COMMAND $OLD_HASH..$NEW_HASH
+                ;;
+              [Nn]* )
+                ;;
+              [Ll]* ) SKIP=1;
+                ;;
+              * ) 
+                $REVIEW_COMMAND $OLD_HASH..$NEW_HASH
+                ;;
+            esac
+          fi
+        fi
+        if [ $SKIP == 0 ]; then
+          FOUND=1
+        fi
+      else
+        echo "The history of $BRANCH is different since last code review (expected to find $OLD_HASH). ($OLD_HASH -> $NEW_HASH)"
         if [ "$MAIN_BRANCH" -a "$GITHUB_URL" ]; then
           echo " -> https://$GITHUB_URL/compare/$MAIN_BRANCH...$NEW_HASH"
         fi
       fi
-
-      FOUND=1
     fi
   else
     # new branch created - prepare parent directories
@@ -92,20 +128,44 @@ for BRANCH in $REMOTE_BRANCHES; do
           echo " -> https://$GITHUB_URL/compare/$MAIN_BRANCH...$NEW_HASH"
         fi
 
-        FOUND=1
+        if [ $INTERACTIVE ]; then
+          if [ "$REVIEW_AUTO" == "true" ]; then
+            $REVIEW_COMMAND $MAIN_HASH..$NEW_HASH
+          else
+            read -p "Review? Y(es)/n(o)/l(ater): " ynl
+            case $ynl in
+              [Yy]* )
+                $REVIEW_COMMAND $MAIN_HASH..$NEW_HASH
+                ;;
+              [Nn]* )
+                ;;
+              [Ll]* ) SKIP=1;
+                ;;
+              * ) 
+                $REVIEW_COMMAND $OLD_HASH..$NEW_HASH
+                ;;
+            esac
+          fi
+        fi
+
+        if [ $SKIP == 0 ]; then
+          FOUND=1
+        fi
       fi
     else
       echo
       echo "Branch $BRANCH created: $NEW_HASH"
 
-      FOUND=1
     fi
   fi
 
   if [ -z "$DRY_RUN" ]; then
-    # update saved revision
-    echo $NEW_HASH > "$HASH_FILE"
+    if [ $SKIP == 0 ]; then
+      # update saved revision
+      echo $NEW_HASH > "$HASH_FILE"
+    fi
   fi
+
 done
 
 # check old branches
@@ -124,6 +184,9 @@ for BRANCH in $EXISTING_BRANCHES; do
   fi
 done
 
-if [ -z "$FOUND" ]; then
+echo
+if [ $FOUND ]; then
+  echo "You did it! Great job!"
+else
   echo "Nothing to review, back to work!"
 fi
