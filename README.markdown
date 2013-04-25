@@ -56,7 +56,11 @@ Note: the ranges listed in `git fetch` output (here: `abc0825..0a711db`) and the
 
 `-n` - dry run, runs everything as above but doesn't update the files at the end
 
+`-i` - interactive mode, view changesets in the viewer of your choice (run `git code-review -h` to see options)
 
 ## Credits
 
-Created by [Jakub Suder](http://psionides.eu), licensed under MIT License.
+* [Jakub Suder](http://psionides.eu), creator
+* [Ben Cullen-Kerney](http://beancuke.com), interactive mode
+
+Licensed under MIT License.
