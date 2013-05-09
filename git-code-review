@@ -71,7 +71,7 @@ for BRANCH in $REMOTE_BRANCHES; do
       else
         echo "Branch $BRANCH was rebased, I'm confused... ($OLD_HASH -> $NEW_HASH)"
 
-        if [ "$MAIN_BRANCH" -a "$GITHUB_URL" ]; then
+        if [ "$MAIN_BRANCH" ] && [ "$GITHUB_URL" ]; then
           echo " -> https://$GITHUB_URL/compare/$MAIN_BRANCH...$NEW_HASH"
         fi
       fi
