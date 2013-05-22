@@ -45,7 +45,7 @@ for BRANCH in $REMOTE_BRANCHES; do
   NEW_HASH=$(git rev-parse --short $BRANCH)
   HASH_FILE="$REVIEW_DIR/$BRANCH"
   REMOTE=$(echo $BRANCH | cut -d '/' -f 1)
-  ORIGIN_URL=$(git remote show -n $REMOTE | grep "Fetch URL:")
+  ORIGIN_URL=$(git config --get remote.$REMOTE.url)
   GITHUB_URL=$(echo "$ORIGIN_URL" | grep -E -o 'github.com[:/].*' | sed -e 's/:/\//' -e 's/\.git$//')
 
   # find the main branch for compare links
