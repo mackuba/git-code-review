@@ -59,4 +59,4 @@ Note: the ranges listed in `git fetch` output (here: `abc0825..0a711db`) and the
 
 ## Credits
 
-Created by [Jakub Suder](http://psionides.eu), licensed under MIT License.
+Created by [Kuba Suder](http://mackuba.eu), licensed under VSPL ([Very Simple Public License](https://github.com/mackuba/git-code-review/blob/master/VSPL-LICENSE.txt)).
